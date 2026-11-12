@@ -5,6 +5,9 @@
     if (rt.active) return;
 
     const cfg = config.read();
+    if (!cfg.trackVisit) {
+      log('⚠️ 「补记浏览数」已关闭：本次不会增加「浏览话题」（站点按不重复话题统计，进过的帖也不会 +1）');
+    }
 
     rt.active = true;
     rt.stopped = false;

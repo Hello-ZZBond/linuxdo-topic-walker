@@ -11,7 +11,7 @@
     { id: 'topicInterval', group: '帖子', row: 1, label: '帖子间隔 ms', type: 'number', min: 300, step: 100, fallback: 1500,
       title: '处理完一帖到开始下一帖之间等多久，防连续请求被限流' },
     { id: 'trackVisit', group: '帖子', row: 1, label: '补记浏览数', type: 'checkbox',
-      title: '每帖额外补发一次浏览记录，让论坛的「话题浏览数」增长。JSON 模式不生效' },
+      title: '每帖补发一次浏览记录，让「浏览话题」增长。站点按「不重复话题」统计：进过的帖不会 +1，数字滞后 5~15 分钟' },
 
     // ── 评论层面：按「帖子内部的楼层」为单位生效 ──
     { id: 'dwell', group: '评论', row: 2, label: '加载停留 s', type: 'number', min: 1, step: 1, fallback: 3,
@@ -303,6 +303,8 @@
     }
     log(`🔍 reactions 计数=${post ? liker.countOf(post) : '-'}`);
     log(`🔍 会话：帖子 ${s.topics} / 评论 ${s.comments} / 赞 ${s.likes}｜run=${JSON.stringify(run.read())}｜pause=${rt.paused} stop=${rt.stopped}`);
+    log(`🔍 补记浏览数=${cfg.trackVisit ? '开' : '关（「浏览话题」不会增长）'}｜待补记 ${s.pendingVisit.length} 帖`);
+    log('🔍 口径：站点「浏览话题」按 topic_views 去重统计，同一个帖再读不会 +1；「浏览帖子」只算新读的楼层，两者都会滞后 5~15 分钟');
     view.status('自检结果已写入日志');
   }
 

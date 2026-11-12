@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         linux.do 帖子巡览器
 // @namespace    https://linux.do/
-// @version      3.2.3
+// @version      3.2.4
 // @description  只消费 linux.do 的 /unseen 未读列表：逐帖打开、逐屏滚动计入已读，补发浏览记录，可给楼主帖点赞；统计「已读帖子/已读评论/已点赞」三项，数据只活一个会话。
 // @author       PI-Desktop
 // @match        https://linux.do/*

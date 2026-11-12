@@ -140,5 +140,8 @@
       failed: '❌ 未记上'
     }[info.state] || info.state;
     log(`👁️ /t/${id} 浏览计数 ${label}${info.via ? ` (${info.via})` : ''}`);
+    if (info.state !== 'confirmed') {
+      log('↳ 这次补发没被确认：「浏览话题」不会增长，稍后可在面板点「👁️ 补记浏览数」');
+    }
     return info;
   }
