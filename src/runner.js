@@ -61,6 +61,13 @@
           continue;
         }
 
+        // last_read > 0 = 这帖以前点开过；站点对「话题」按帖去重，
+        // 所以它能涨评论、不会涨话题。明说，免得把正常现象当成故障。
+        const readBefore = Number(probe.topic.last_read_post_number) || 0;
+        if (readBefore > 0) {
+          log(`ℹ️ /t/${id} 之前已进过（已读到 ${readBefore} 楼）：本话题不会增加「浏览话题」，只会增加评论数`);
+        }
+
         const ctx = { id, topic: probe.topic, title: discourse.title(probe.topic), cfg };
         const visitInfo = await trackVisitOnce(id, cfg);
         // 记下这次补发是否被服务端确认：整页跳转会在下一页面用它决定补不补

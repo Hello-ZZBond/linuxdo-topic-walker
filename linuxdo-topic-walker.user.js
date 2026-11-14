@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         linux.do 帖子巡览器
 // @namespace    https://linux.do/
-// @version      3.2.7
+// @version      3.2.8
 // @description  只消费 linux.do 的 /unseen 未读列表：逐帖打开、逐屏滚动计入已读，补发浏览记录，可给楼主帖点赞；统计「已读帖子/已读评论/已点赞」三项，数据只活一个会话。
 // @author       PI-Desktop
 // @match        https://linux.do/*
@@ -1238,6 +1238,13 @@
           source.advance();
           if (!(await hold(Math.min(cfg.topicInterval, 400)))) break;
           continue;
+        }
+
+        // last_read > 0 = 这帖以前点开过；站点对「话题」按帖去重，
+        // 所以它能涨评论、不会涨话题。明说，免得把正常现象当成故障。
+        const readBefore = Number(probe.topic.last_read_post_number) || 0;
+        if (readBefore > 0) {
+          log(`ℹ️ /t/${id} 之前已进过（已读到 ${readBefore} 楼）：本话题不会增加「浏览话题」，只会增加评论数`);
         }
 
         const ctx = { id, topic: probe.topic, title: discourse.title(probe.topic), cfg };
