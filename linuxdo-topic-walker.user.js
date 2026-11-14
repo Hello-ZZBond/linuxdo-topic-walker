@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         linux.do 帖子巡览器
 // @namespace    https://linux.do/
-// @version      3.2.6
+// @version      3.2.7
 // @description  只消费 linux.do 的 /unseen 未读列表：逐帖打开、逐屏滚动计入已读，补发浏览记录，可给楼主帖点赞；统计「已读帖子/已读评论/已点赞」三项，数据只活一个会话。
 // @author       PI-Desktop
 // @match        https://linux.do/*
@@ -1248,6 +1248,14 @@
         if (visitInfo.state !== 'confirmed' && visitInfo.state !== 'skipped') session.addPendingVisit(id);
 
         const result = await reader(ctx);
+
+        // iframe 模式没有「落地页」可依赖：读完如果补发仍未确认，
+        // 趁这一页还在，再补一次（整页跳转由 resumeHandoff 负责）。
+        if (result.kind === 'ok' && cfg.trackVisit && run.read().visitConfirmed === false) {
+          const retry = await trackVisitOnce(id, cfg);
+          run.write({ visitConfirmed: retry.state === 'confirmed' });
+          if (retry.state !== 'confirmed') session.addPendingVisit(id);
+        }
 
         if (result.kind === 'aborted') {
           log(`⏸ /t/${id} 被打断，不计入已读`);

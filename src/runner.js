@@ -70,6 +70,14 @@
 
         const result = await reader(ctx);
 
+        // iframe 模式没有「落地页」可依赖：读完如果补发仍未确认，
+        // 趁这一页还在，再补一次（整页跳转由 resumeHandoff 负责）。
+        if (result.kind === 'ok' && cfg.trackVisit && run.read().visitConfirmed === false) {
+          const retry = await trackVisitOnce(id, cfg);
+          run.write({ visitConfirmed: retry.state === 'confirmed' });
+          if (retry.state !== 'confirmed') session.addPendingVisit(id);
+        }
+
         if (result.kind === 'aborted') {
           log(`⏸ /t/${id} 被打断，不计入已读`);
           break;
