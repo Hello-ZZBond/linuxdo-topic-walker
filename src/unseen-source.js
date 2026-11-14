@@ -9,11 +9,11 @@
 
     async function collect() {
       const seen = new Set(); // 只在本次收集内部跨页去重
-      const ids = [];
+      const items = []; // { id, at }：at = 发布时间，用来把新帖排在前面
       let path = UNSEEN_PATH;
 
       for (let page = 1; path && page <= LIMIT.listPages; page++) {
-        view.status(`收集未读列表 第 ${page} 页（已有 ${ids.length} 帖）`);
+        view.status(`收集未读列表 第 ${page} 页（已有 ${items.length} 帖）`);
 
         const list = await discourse.listPage(path);
         if (!list) break;
@@ -22,11 +22,11 @@
           const id = item && item.id;
           if (!id || seen.has(id)) continue;
           seen.add(id);
-          ids.push(id);
-          if (cfg.maxCollect > 0 && ids.length >= cfg.maxCollect) break;
+          items.push({ id, at: Date.parse(item.created_at) || 0 });
+          if (cfg.maxCollect > 0 && items.length >= cfg.maxCollect) break;
         }
 
-        if (cfg.maxCollect > 0 && ids.length >= cfg.maxCollect) {
+        if (cfg.maxCollect > 0 && items.length >= cfg.maxCollect) {
           log(`已达收集上限 ${cfg.maxCollect} 帖`);
           break;
         }
@@ -38,7 +38,10 @@
         if (!(await hold(cfg.topicInterval))) break;
       }
 
-      return ids;
+      // 话题数只对「从没进过」的帖 +1：刚发布的帖子最可能没被点开过，
+      // 所以按发布时间从新到旧处理。没有 created_at 时保持原顺序（稳定排序）。
+      items.sort((a, b) => b.at - a.at);
+      return items.map((x) => x.id);
     }
 
     return {
