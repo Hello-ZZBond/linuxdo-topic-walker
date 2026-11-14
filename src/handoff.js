@@ -35,6 +35,17 @@
     const id = st.currentId || currentTopicId();
     log(`🔁 接力 /t/${id}：${cfg.dwell}s 后点赞 + 滚动，读完接着跑下一帖`);
 
+    // 跳转前那次补发可能随页面卸载丢掉（Cloudflare 挑战、请求被取消等）。
+    // 落地页本身就是话题页，这里补一次；只在明确「未确认」时补，避免重复请求。
+    if (id && st.visitConfirmed === false && cfg.trackVisit) {
+      log('👁️ 落地页补发浏览记录（跳转前那次未确认）');
+      (async () => {
+        const info = await trackVisitOnce(id, cfg);
+        run.write({ visitConfirmed: info.state === 'confirmed' });
+        if (info.state !== 'confirmed') session.addPendingVisit(id);
+      })();
+    }
+
     (async () => {
       const bail = (why) => {
         run.write({ running: false, paused: false, phase: 'idle' });

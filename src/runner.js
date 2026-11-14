@@ -63,6 +63,8 @@
 
         const ctx = { id, topic: probe.topic, title: discourse.title(probe.topic), cfg };
         const visitInfo = await trackVisitOnce(id, cfg);
+        // 记下这次补发是否被服务端确认：整页跳转会在下一页面用它决定补不补
+        run.write({ visitConfirmed: visitInfo.state === 'confirmed' });
         // 没被确认记上的，留给「补记浏览数」按钮
         if (visitInfo.state !== 'confirmed' && visitInfo.state !== 'skipped') session.addPendingVisit(id);
 

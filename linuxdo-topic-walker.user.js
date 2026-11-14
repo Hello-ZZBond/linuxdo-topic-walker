@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         linux.do 帖子巡览器
 // @namespace    https://linux.do/
-// @version      3.2.4
+// @version      3.2.5
 // @description  只消费 linux.do 的 /unseen 未读列表：逐帖打开、逐屏滚动计入已读，补发浏览记录，可给楼主帖点赞；统计「已读帖子/已读评论/已点赞」三项，数据只活一个会话。
 // @author       PI-Desktop
 // @match        https://linux.do/*
@@ -1239,6 +1239,8 @@
 
         const ctx = { id, topic: probe.topic, title: discourse.title(probe.topic), cfg };
         const visitInfo = await trackVisitOnce(id, cfg);
+        // 记下这次补发是否被服务端确认：整页跳转会在下一页面用它决定补不补
+        run.write({ visitConfirmed: visitInfo.state === 'confirmed' });
         // 没被确认记上的，留给「补记浏览数」按钮
         if (visitInfo.state !== 'confirmed' && visitInfo.state !== 'skipped') session.addPendingVisit(id);
 
@@ -1717,6 +1719,17 @@
 
     const id = st.currentId || currentTopicId();
     log(`🔁 接力 /t/${id}：${cfg.dwell}s 后点赞 + 滚动，读完接着跑下一帖`);
+
+    // 跳转前那次补发可能随页面卸载丢掉（Cloudflare 挑战、请求被取消等）。
+    // 落地页本身就是话题页，这里补一次；只在明确「未确认」时补，避免重复请求。
+    if (id && st.visitConfirmed === false && cfg.trackVisit) {
+      log('👁️ 落地页补发浏览记录（跳转前那次未确认）');
+      (async () => {
+        const info = await trackVisitOnce(id, cfg);
+        run.write({ visitConfirmed: info.state === 'confirmed' });
+        if (info.state !== 'confirmed') session.addPendingVisit(id);
+      })();
+    }
 
     (async () => {
       const bail = (why) => {
